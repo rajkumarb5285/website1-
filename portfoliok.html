@@ -1,0 +1,419 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Khushi — Portfolio</title>
+  <meta name="description" content="Portfolio — Data Science  & AI Developer" />
+
+  <!--
+    == Design notes ==
+    - Single-file portfolio: home, about, projects, contact + LinkedIn
+    - Focus: strong, modern UI/UX with subtle micro-interactions and unique color accents
+    - All styles heavily commented for other devs to understand and extend
+  -->
+
+  <style>
+    /* ==========================================================
+       Root variables: central place to control the look & feel
+       ========================================================== */
+    :root{
+      --bg: #0f1724;             /* deep, soft navy for rich contrast */
+      --card: linear-gradient(135deg,#0b1220 0%, #0f1b2b 100%); /* subtle glassy card gradient */
+      --muted: #94a3b8;          /* secondary text color */
+      --accent-1: #7c3aed;       /* purple accent (primary) */
+      --accent-2: #06b6d4;       /* teal accent (secondary) */
+      --glass: rgba(255,255,255,0.04); /* translucent card background */
+      --glow: 0 10px 30px rgba(124,58,237,0.12); /* accent glow */
+      --radius: 14px;           /* border-radius used across cards/buttons */
+      --max-width: 1100px;      /* container width */
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", "Courier New", monospace;
+      --sans: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    }
+
+    /* ==========================================================
+       Global reset and base typographic scale
+       ========================================================== */
+    *,*::before,*::after{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family:var(--sans);
+      background: radial-gradient(1200px 600px at 10% 10%, rgba(124,58,237,0.06), transparent),
+                  radial-gradient(900px 500px at 90% 90%, rgba(6,182,212,0.03), transparent),
+                  var(--bg);
+      color: #e6eef8;
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+      line-height:1.45;
+      padding:40px 20px;
+    }
+
+    /* ==========================================================
+       Utility helpers (spacing, layout) — quick to reuse
+       ========================================================== */
+    .container{max-width:var(--max-width);margin:0 auto}
+    .row{display:flex;gap:20px;align-items:center}
+    .col{flex:1}
+    .center{display:flex;align-items:center;justify-content:center}
+
+    /* ==========================================================
+       Navigation bar: floating glass panel with logo and links
+       ========================================================== */
+    header{
+      position:sticky;top:20px;z-index:40;
+      display:flex;justify-content:center;
+      pointer-events:none; /* allow clicks only on children */
+    }
+    .nav{
+      pointer-events:auto; /* re-enable for nav itself */
+      width:calc(100% - 40px);
+      max-width:var(--max-width);
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      backdrop-filter: blur(6px);
+      border-radius:20px;
+      padding:10px 18px;
+      box-shadow:var(--glow);
+      display:flex;align-items:center;justify-content:space-between;gap:12px;
+    }
+    .brand{display:flex;gap:12px;align-items:center}
+    .logo{
+      width:46px;height:46px;border-radius:12px;display:inline-grid;place-items:center;
+      background:linear-gradient(135deg,var(--accent-1),var(--accent-2));
+      font-weight:700;color:white;font-family:var(--mono);
+      box-shadow:0 6px 20px rgba(7,14,26,0.6);
+    }
+    nav a{color:var(--muted);text-decoration:none;padding:8px 10px;border-radius:10px;font-weight:600}
+    nav a:hover{color: white;background:rgba(255,255,255,0.03)}
+
+    /* ==========================================================
+       Hero section: big intro with animated illustration and CTA
+       ========================================================== */
+    .hero{display:grid;grid-template-columns:1fr 420px;gap:36px;align-items:center;margin-top:40px}
+    .intro h1{font-size:clamp(28px,5vw,44px);margin:0 0 12px}
+    .intro p{color:var(--muted);margin:0 0 18px;font-size:1.05rem}
+
+    /* CTA buttons with distinct affordances */
+    .cta{display:flex;gap:12px}
+    .btn{
+      background:linear-gradient(90deg,var(--accent-1),#5b21b6);
+      border:none;padding:12px 16px;border-radius:12px;color:white;font-weight:700;cursor:pointer;
+      box-shadow:var(--glow);transition:transform .18s ease,box-shadow .18s ease;
+    }
+    .btn.secondary{
+      background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted);font-weight:700;
+    }
+    .btn:active{transform:translateY(2px)}
+    .btn:hover{transform:translateY(-4px)}
+
+    /* Hero card: stylized code / project preview */
+    .hero-card{
+      background:var(--card);
+      padding:18px;border-radius:18px;box-shadow:0 8px 30px rgba(2,6,23,0.6);
+      color:#dbeafe;min-height:260px;display:flex;flex-direction:column;gap:10px;justify-content:center
+    }
+    .code-snippet{font-family:var(--mono);font-size:0.9rem;white-space:pre-wrap;opacity:0.95}
+
+    /* ==========================================================
+       Sections: About, Projects, Contact styles
+       ========================================================== */
+    section{margin-top:42px}
+    .section-title{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+    .kicker{background:linear-gradient(90deg,var(--accent-1),var(--accent-2));padding:6px 10px;border-radius:999px;font-weight:700}
+    h2{margin:0;font-size:20px}
+
+    /* ABOUT: two column card with skills list and visual timeline */
+    .about{display:grid;grid-template-columns:1fr 420px;gap:28px}
+    .about-card{background:var(--glass);padding:18px;border-radius:16px;border:1px solid rgba(255,255,255,0.03)}
+    .skills{display:flex;flex-wrap:wrap;gap:10px}
+    .skill{background:rgba(255,255,255,0.03);padding:8px 12px;border-radius:10px;font-weight:700;color:var(--muted)}
+
+    /* Timeline simplified visual */
+    .timeline{padding:12px;display:flex;flex-direction:column;gap:10px}
+    .timeline .item{display:flex;gap:10px;align-items:flex-start}
+    .dot{width:12px;height:12px;border-radius:50%;background:var(--accent-1);margin-top:6px}
+
+    /* PROJECTS: cards grid and hover interactions */
+    .projects-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:18px}
+    .project-card{
+      background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      padding:16px;border-radius:14px;border:1px solid rgba(255,255,255,0.03);transition:transform .18s ease,box-shadow .18s ease;
+    }
+    .project-card:hover{transform:translateY(-8px);box-shadow:0 24px 60px rgba(2,6,23,0.6)}
+    .proj-title{font-weight:800}
+    .proj-desc{color:var(--muted);font-size:0.95rem;margin:8px 0}
+    .links{display:flex;gap:8px}
+    .pill{padding:8px 10px;border-radius:10px;font-weight:700;text-decoration:none}
+    .pill.github{background:linear-gradient(90deg,#111827,#060b10);color:#fff}
+    .pill.live{background:linear-gradient(90deg,#063b3b,#065f46);color:#fff}
+
+    /* CONTACT: form + contact card */
+    .contact{display:grid;grid-template-columns:1fr 380px;gap:20px}
+    form{display:flex;flex-direction:column;gap:12px;padding:18px;background:var(--glass);border-radius:12px}
+    input,textarea{background:transparent;border:1px solid rgba(255,255,255,0.04);padding:12px;border-radius:10px;color:inherit;font-size:1rem}
+    textarea{min-height:120px}
+
+    /* Footer */
+    footer{margin-top:40px;padding:18px;border-radius:12px;text-align:center;color:var(--muted)}
+
+    /* ==========================================================
+       Responsive adjustments (mobile-first friendly)
+       ========================================================== */
+    @media (max-width:900px){
+      .hero,.about{grid-template-columns:1fr}
+      .nav{padding:12px}
+      .hero-card{min-height:200px}
+    }
+
+  </style>
+</head>
+<body>
+  <header>
+    <div class="nav container">
+      <div class="brand">
+        <div class="logo">K</div>
+        <div>
+          <div style="font-weight:800">Khushi </div>
+          <div style="font-size:12px;color:var(--muted)">Data Science · GenAI developer</div>
+        </div>
+      </div>
+      <nav>
+        <a href="#home">Home</a>
+        <a href="#about">About</a>
+        <a href="#projects">Projects</a>
+        <a href="#contact">Contact</a>
+        <a href="https://www.linkedin.com/in/khushi-kumari-719ab6331?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_app" target="_blank">LinkedIn</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- ================= HERO / HOME ================= -->
+    <section id="home" class="hero">
+      <div class="intro">
+        <div class="kicker">Hello, I'm</div>
+        <h1>Khushi — Data Scientist & Analatics the Data Driven Dashboard & Visualize report</h1>
+        <p>"Data Science is the art of extracting insights from raw data using statistics, programming, and machine learning. It helps businesses and individuals make smarter, data-driven decisions.".
+        </p>
+        <div class="cta">
+          <button class="btn" onclick="document.getElementById('contact').scrollIntoView({behavior:'smooth'})">Hire me</button>
+          <a class="btn secondary" href="#projects">See projects</a>
+        </div>
+      </div>
+
+      <aside class="hero-card">
+        <!-- stylized tiny code preview to show "wow" factor -> replace snippet with live embed if desired -->
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div style="font-weight:800">Featured Demo</div>
+          <div style="font-size:12px;color:var(--muted)">Live preview</div>
+        </div>
+        <pre class="code-snippet">// Minimal demo: animated card
+&lt;div class="card"&gt;Awesome UI&lt;/div&gt;
+
+.card{border-radius:12px;padding:16px;background:linear-gradient(90deg,var(--accent-1),var(--accent-2));}
+        </pre>
+        <div style="display:flex;gap:10px;align-items:center">
+          <a class="pill live" href="https://username.github.io/demo-1" target="_blank">Live demo</a>
+          <a class="pill github" href="https://github.com/username/demo-1" target="_blank">GitHub</a>
+        </div>
+      </aside>
+    </section>
+
+    <!-- ================= ABOUT ================= -->
+    <section id="about">
+      <div class="section-title">
+        <div class="kicker">About</div>
+        <h2>Who I am</h2>
+      </div>
+
+      <div class="about">
+        <div class="about-card">
+          <p style="color:var(--muted);margin-top:0">
+           "I'm a passionate data science enthusiast with an analytical eye. I transform raw data into meaningful insights with attention to detail — accuracy, patterns, prediction, and impact."
+          </p>
+
+          <h3 style="margin-bottom:8px">Skills</h3>
+          <div class="skills">
+            <span class="skill">Python</span>
+            <span class="skill">R</span>
+            <span class="skill">SQL</span>
+            <span class="skill">Machine Learning</span>
+            <span class="skill">Deep Learning</span>
+            <span class="skill">Data Visualization</span>
+            <span class="skill">Statistics</span>
+            <span class="skill">Big Data</span>
+            <span class="skill">Power BI / Tableau</span>
+            <span class="skill">Data Cleaning</span>
+            <span class="skill">Predictive Modeling</span>
+            <span class="skill">GenAI</span>
+            <span class="skill">Excel</span>
+            <span class="skill">Communication</span>
+            <span class="skill">Problem Solving</span>
+            <span class="skill">Critical Thinking</span>
+            <span class="skill">Collaboration</span>
+            <span class="skill">Time Management</span>
+            <span class="skill">SQL & DBMS</span>
+          </div>
+
+          <h3 style="margin-top:18px">Design approach</h3>
+          <p style="color:var(--muted)">I start with structure and hierarchy, move to accessible color & contrast, then add purposeful motion. Documentation & maintainable code are always part of the deliverable.</p>
+        </div>
+
+        <div class="about-card">
+          <h3 style="margin-top:0">Experience & Education</h3>
+          <div class="timeline">
+            <div class="item"><div class="dot"></div><div><strong>DATA SCIENCE  Intern</strong><div style="color:var(--muted);font-size:13px">Codec Technogies — 2025</div></div></div>
+            <div class="item"><div class="dot"></div><div><strong>BSBI </strong><div style="color:var(--muted);font-size:13px">Currently pursuing</div></div></div>
+            <div class="item"><div class="dot"></div><div><strong>Freelance Projects</strong><div style="color:var(--muted);font-size:13px">Multiple Excel & Python EDA Projects and ML Projects</div></div></div>
+          </div>
+
+          <h3 style="margin-top:12px">Contact</h3>
+          <div style="color:var(--muted)">Email: <a href="mailto:Kushinirmal0987@gmail.com">Kushinirmal0987@gmail.com</a><br>Location: Bangalore, India</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= PROJECTS ================= -->
+    <section id="projects">
+      <div class="section-title">
+        <div class="kicker">Work</div>
+        <h2>Selected projects</h2>
+      </div>
+
+      <div class="projects-grid">
+        <!-- Project card template: copy replace content -->
+
+        <article class="project-card">
+          <div class="proj-title">1. CREDIT-CARD-fraud-detection- (Demo)</div>
+          <div class="proj-desc">Shop UI with product grid, filters, and animated add-to-cart microinteraction.</div>
+          <div class="links">
+            <a class="pill github" href="https://github.com/DataQUEEN99/CREDIT-CARD-fraud-detection-" target="_blank">GitHub</a>
+            <a class="pill live" href="https://github.com/DataQUEEN99/CREDIT-CARD-fraud-detection-" target="_blank">Live</a>
+          </div>
+        </article>
+
+        <article class="project-card">
+          <div class="proj-title">2. DNA-RNA-Sequence-Analyzer</div>
+          <div class="proj-desc">Single-file portfolio with animations and well-documented styles + components.</div>
+          <div class="links">
+            <a class="pill github" href="https://github.com/DataQUEEN99/DNA-RNA-Sequence-Analyzer" target="_blank">GitHub</a>
+            <a class="pill live" href="https://github.com/DataQUEEN99/DNA-RNA-Sequence-Analyzer" target="_blank">Live</a>
+          </div>
+        </article>
+
+        <article class="project-card">
+          <div class="proj-title">3. Delhi-Climate-Data-Analysis-and-Prediction-using-R</div>
+          <div class="proj-desc">Simple CRUD interface for salon product inventory – built with React + Firebase.</div>
+          <div class="links">
+            <a class="pill github" href="https://github.com/DataQUEEN99/Delhi-Climate-Data-Analysis-and-Prediction-using-R" target="_blank">GitHub</a>
+            <a class="pill live" href="https://github.com/DataQUEEN99/Delhi-Climate-Data-Analysis-and-Prediction-using-R" target="_blank">Live</a>
+          </div>
+        </article>
+
+        <article class="project-card">
+          <div class="proj-title">4. Library-Management-System</div>
+          <div class="proj-desc">Interactive sales dashboard (charts, filters) — ideal for analytics demos in Power BI / web charts.</div>
+          <div class="links">
+            <a class="pill github" href="https://github.com/DataQUEEN99/Library-Management-System" target="_blank">GitHub</a>
+            <a class="pill live" href="https://github.com/DataQUEEN99/Library-Management-System" target="_blank">Live</a>
+          </div>
+        </article>
+
+        <article class="project-card">
+          <div class="proj-title">5. Heart-Disease-Prediction-Severity-Analysis-using-Regression-and-Classification</div>
+          <div class="proj-desc">Fun interactive game demonstrating JS logic, state, and animations.</div>
+          <div class="links">
+            <a class="pill github" href="https://github.com/DataQUEEN99/Heart-Disease-Prediction-Severity-Analysis-using-Regression-and-Classification" target="_blank">GitHub</a>
+            <a class="pill live" href="https://github.com/DataQUEEN99/Heart-Disease-Prediction-Severity-Analysis-using-Regression-and-Classification" target="_blank">Live</a>
+          </div>
+        </article>
+
+        <article class="project-card">
+          <div class="proj-title">5. CANCER_GENE_EXPRESSION</div>
+          <div class="proj-desc">Fun interactive game demonstrating JS logic, state, and animations.</div>
+          <div class="links">
+            <a class="pill github" href="https://github.com/DataQUEEN99/CANCER_GENE_EXPRESSION_CLASSIFICATION_scikit_learn" target="_blank">GitHub</a>
+            <a class="pill live" href="https://github.com/DataQUEEN99/CANCER_GENE_EXPRESSION_CLASSIFICATION_scikit_learn" target="_blank">Live</a>
+          </div>
+        </article>
+
+
+      </div>
+
+      <p style="color:var(--muted);margin-top:14px">Tip for recruiters: click <strong>Live</strong> to open the running demo; click <strong>GitHub</strong> to inspect source & README.</p>
+    </section>
+
+    <!-- ================= CONTACT ================= -->
+    <section id="contact">
+      <div class="section-title">
+        <div class="kicker">Contact</div>
+        <h2>Let's build something together</h2>
+      </div>
+
+      <div class="contact">
+        <form onsubmit="handleSubmit(event)">
+          <input id="name" placeholder="Your name" required />
+          <input id="email" type="email" placeholder="Your email" required />
+          <input id="subject" placeholder="Subject" />
+          <textarea id="message" placeholder="Message" required></textarea>
+          <div style="display:flex;gap:10px;align-items:center">
+            <button class="btn" type="submit">Send message</button>
+            <div style="color:var(--muted);font-size:13px">Or reach me on <a href="https://www.linkedin.com/in/khushi-kumari-719ab6331?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_app" target="_blank">LinkedIn</a></div>
+          </div>
+        </form>
+
+        <aside class="about-card">
+          <h3 style="margin-top:0">Contact details</h3>
+          <p style="color:var(--muted)">Email: <a href="mailto:khushi2512@gmail.com">Kushinirmal0987@gmail.com</a></p>
+          <p style="color:var(--muted)">Phone: +91 80953 72812</p>
+          <p style="color:var(--muted)">Location: Bangalore, Karnataka</p>
+
+      </div>
+    </section>
+
+    <footer>
+      <div>Made with ❤️ · Designed & Coded by Khushi</div>
+    </footer>
+
+  </main>
+
+  <script>
+    /* ==========================================================
+       Lightweight JS: form handling, simple analytics & helpers
+       Commented so other devs can easily follow and extend
+       ========================================================== */
+
+    
+  async function handleSubmit(e) {
+    e.preventDefault();
+
+    const name = document.getElementById('name').value.trim();
+    const email = document.getElementById('email').value.trim();
+    const subject = document.getElementById('subject').value.trim();
+    const message = document.getElementById('message').value.trim();
+
+    if (!name || !email || !message) {
+      alert('Please fill required fields');
+      return;
+    }
+
+    try {
+      const res = await fetch('http://localhost:5000/send-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, subject, message })
+      });
+
+      const data = await res.json();
+      alert(data.message);
+      e.target.reset();
+    } catch (err) {
+      alert('Failed to send message. Please try again later.');
+      console.error(err);
+    }
+  }
+</script>
+
+
+</body>
+</html>
